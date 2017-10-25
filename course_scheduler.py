@@ -4,15 +4,102 @@ import course_dictionary
 import warnings; warnings.simplefilter('ignore')
 
 def main(argv):
+    #Creates a dictionary to use for testing
     test = course_dictionary.create_course_dict()
+    #Creates an object course
     Course = namedtuple('Course', 'program, designation')
+    #initializes a course(state) to be the end goal of the schedule
     goals = Course('CS', 'major')
     #print(test[Course('CS', 'major')])
+    #initializes the initial state to no courses
     init_state = []
+    schedule = []
     #course_dictionary.print_dict(test)
-    srch_alg(test, goals, init_state)
+    #test_most_satisfied_mans(test)
+    search(test, goals, init_state, schedule)
+    goals = Course ('ECON', '3020')
+    search(test, goals, init_state, schedule)
     print('Done')
 
+
+def test_most_satisfied_mans(dictionary):
+    Course = namedtuple('Course', 'program, designation')
+    CourseInfo = namedtuple('CourseInfo', 'credits, terms, prereqs')
+    courseInfo = dictionary[Course('CS', '3259')]
+    completed = [Course('MATH', '2400')]
+    print(courseInfo.prereqs)
+    print(mostSatisfied(courseInfo.prereqs, completed))
+
+
+def search(dictionary, start, visited, schedule):
+    endGoal = [start]
+    while endGoal:
+        course = endGoal.pop()
+        if course not in visited:
+            courseInfo = dictionary[course]
+            #Checks if the course is a higher level
+            if courseInfo.credits is '0':
+                #runHighLevel
+                #if credits = 0 and the largest prereq set = 1
+                if (isOwnClass(courseInfo.prereqs)):
+                    prereqs = findFirst(visited, courseInfo.prereqs)
+                    if len(prereqs) is 0:
+                        print (course, ' scheduled')
+                        visited.append(course)
+                    else:
+                        for prereq in prereqs:
+                            if prereq not in visited:
+                                visited.append(course)
+                                endGoal.append(prereq)
+                else:
+                    #if courseInfo.prereqs == 1
+                    #if all are equal to one then the higher level essentially just a course
+                    if preReqsComp(visited, courseInfo.prereqs):
+                        print (course, ' scheduled')
+                        visited.append(course)
+                    else:
+                        #add course to the stack of courses that need there prereqs completed
+                        endGoal.append(course)
+                        #find the most satisfied prereq set
+                        prereqs = mostSatisfied(visited,courseInfo.prereqs)
+                        #in the most satisfied set for each prereq not already
+                        #in scheduled append to the to be scheduled stack
+                        for prereq in prereqs:
+                            if prereq not in schedule:
+                                endGoal.append(prereq)
+
+            else:
+                #checks if the course is one with no prereqs
+                if len(courseInfo.prereqs) is 0:
+                    #print("Low")
+                    print(course, ' scheduled')
+                    visited.append(course)
+                    #course has credits but no prereqs do SOMETHING
+                else:
+                    if preReqsComp(visited, courseInfo.prereqs):
+                        #newl
+                        print(course, ' scheduled')
+                        visited.append(course)
+                        #course has credits & prereqs but theyve been completed
+                    else:
+                        #add course to the stack of courses that need there prereqs completed
+                        endGoal.append(course)
+                        #find the most satisfied prereq set
+                        prereqs = mostSatisfied(visited, courseInfo.prereqs)
+                        #in the most satisfied set for each prereq not already
+                        #in scheduled append to the to be scheduled stack
+                        for prereq in prereqs:
+                            if prereq not in schedule:
+                                endGoal.append(prereq)
+
+
+#Tests to see if the length of all prereqs are length 1 (and) and is a edge case class
+def isOwnClass(prereqs):
+    if all(len(ors) is 1 for ors in prereqs):
+        return True
+    return False
+
+#incompleted
 def scheduler(dictionary, init, goals):
     courses = [goals]
     semesters = [('Frosh', 'Fall'), ('Frosh', 'Spring'), ('Soph', 'Fall'),
@@ -20,81 +107,50 @@ def scheduler(dictionary, init, goals):
                 ('Senior', 'Fall'), ('Senior', 'Spring')]
     semDict = {semester:[0, []] for semester in semesters}
 
-    #starting at given semesters
-    #
-
-def findPreReq(scheduled, prereqs)
+#if all of the conjunction terms have been visited than return that specific
+#set of ands (in the form of 1 or) else return an empty list
+def findPreReq(scheduled, prereqs):
     for ors in prereqs:
         if all (ands in scheduled for ands in ors):
             return ors
-        else []
+    return []
 
-def preReqsComp(scheduled, prereqs)
+def findFirst(scheduled, prereqs):
+    for ors in prereqs:
+        for ands in ors:
+            if ands not in scheduled:
+                return ors
+    return []
+
+#checks to see if there is an or that has all prerequisites scheduled
+def preReqsComp(scheduled, prereqs):
     for ors in prereqs:
         if all (ands in scheduled for ands in ors):
-            return true
-        else false
+            return True
+    return False
 
-def search(dictionary, start, found, schedule):
-    endGoal = [start]
-    while endGoal:
-        course = endGoal.pop()
-        if course not in found:
-            courseInfo = dictionary[course]
-            if courseInfo.credits = 0:
-                #runHighLevel
-                print("High")
-            else:
-                if len(courseInfo.prereqs) = 0:
-                print("Low")
-                    else:
-                        if preReqsComp(courseInfo.prereqs, found):
-                            #schedule
-                            print("should be scheduled guy")
+#counts how many prereqs have been satisfied in the current set
+def count(scheduled, prereqs):
+    count = 0
+    for prereq in prereqs:
+        if prereqs in scheduled:
+            count += 1
+    return count
 
-
-
-
-
-                #runLowLevel
-                    #if there are no prereqs then
-
-"""
-def srch_alg(dictionary, start, visited):
-    #Pushing the goal state on the top of the stack
-    stack = [start]
-    #While the stack is not empty
-    while stack:
-        #Sets course = to the top element of the stack
-        course = stack.pop()
-        #If the course is not in the list "visited" then...
-        if course not in visited:
-
-            #if courseInfo.credits is 0:
-                #call high level functions
-            #else call the course functions
+#returns the prereq set that has the most satisfied prereqs
+def mostSatisfied(completed, prereqs):
+    goal = []
+    maxSat = -1
+    for ors in prereqs:
+        cur = 0
+        for ands in ors:
+            if ands in completed:
+                cur = cur + 1
+        if cur > maxSat:
+            maxSat = cur
+            goal = ors
+    return goal
 
 
-
-            #Pull the dictionary information regarding the course and set to info
-            courseInfo = dictionary[course]
-            #Add the course to the list "visited"
-            visited.append(course)
-            #??if courseInfo.credits is not '0':
-            #Print out Course and corresponding information
-            print (course, courseInfo)
-            #If according to the courseInfo there are any prerequisites for the course...
-            if len (courseInfo.prereqs) is not 0:
-                #Create an empty list tmpStk
-                tmpStk = []
-                #Starting at the first prereq for all prereqs of course
-                for prereq in courseInfo.prereqs[0]:
-                    #If the prereq isnt visited add to the tmpStk
-                    if prereq not in visited:
-                        tmpStk.append(prereq)
-                #while tmpstk isnt empty transfer contents to the main stack
-                while tmpStk:
-                    stack.append(tmpStk.pop())
-"""
 if __name__ == "__main__":
     main(sys.argv)
