@@ -23,9 +23,43 @@ def scheduler(dictionary, init, goals):
     #starting at given semesters
     #
 
+def findPreReq(scheduled, prereqs)
+    for ors in prereqs:
+        if all (ands in scheduled for ands in ors):
+            return ors
+        else []
+
+def preReqsComp(scheduled, prereqs)
+    for ors in prereqs:
+        if all (ands in scheduled for ands in ors):
+            return true
+        else false
+
+def search(dictionary, start, found, schedule):
+    endGoal = [start]
+    while endGoal:
+        course = endGoal.pop()
+        if course not in found:
+            courseInfo = dictionary[course]
+            if courseInfo.credits = 0:
+                #runHighLevel
+                print("High")
+            else:
+                if len(courseInfo.prereqs) = 0:
+                print("Low")
+                    else:
+                        if preReqsComp(courseInfo.prereqs, found):
+                            #schedule
+                            print("should be scheduled guy")
 
 
 
+
+
+                #runLowLevel
+                    #if there are no prereqs then
+
+"""
 def srch_alg(dictionary, start, visited):
     #Pushing the goal state on the top of the stack
     stack = [start]
@@ -35,6 +69,13 @@ def srch_alg(dictionary, start, visited):
         course = stack.pop()
         #If the course is not in the list "visited" then...
         if course not in visited:
+
+            #if courseInfo.credits is 0:
+                #call high level functions
+            #else call the course functions
+
+
+
             #Pull the dictionary information regarding the course and set to info
             courseInfo = dictionary[course]
             #Add the course to the list "visited"
@@ -54,6 +95,6 @@ def srch_alg(dictionary, start, visited):
                 #while tmpstk isnt empty transfer contents to the main stack
                 while tmpStk:
                     stack.append(tmpStk.pop())
-
+"""
 if __name__ == "__main__":
     main(sys.argv)
