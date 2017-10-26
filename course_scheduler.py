@@ -10,17 +10,18 @@ def main(argv):
     Course = namedtuple('Course', 'program, designation')
     #initializes a course(state) to be the end goal of the schedule
     goals = Course('CS', 'major')
+    semesters = [('Frosh', 'Fall'), ('Frosh', 'Spring'), ('Soph', 'Fall'),
+                ('Soph', 'Spring'),('Junior', 'Fall'), ('Junior', 'Spring'),
+                ('Senior', 'Fall'), ('Senior', 'Spring')]
+    semDict = {semester:[0, []] for semester in semesters}
     #print(test[Course('CS', 'major')])
     #initializes the initial state to no courses
     init_state = []
     schedule = []
     #course_dictionary.print_dict(test)
     #test_most_satisfied_mans(test)
-    search(test, goals, init_state, schedule)
-    goals = Course ('ECON', '3020')
-    search(test, goals, init_state, schedule)
+    search(semesters, semDict, test, goals, init_state, schedule)
     print('Done')
-
 
 def test_most_satisfied_mans(dictionary):
     Course = namedtuple('Course', 'program, designation')
@@ -30,9 +31,9 @@ def test_most_satisfied_mans(dictionary):
     print(courseInfo.prereqs)
     print(mostSatisfied(courseInfo.prereqs, completed))
 
-
-def search(dictionary, start, visited, schedule):
+def search(semesters, semDict, dictionary, start, visited, schedule):
     endGoal = [start]
+    reqDictionary = {}
     while endGoal:
         course = endGoal.pop()
         if course not in visited:
@@ -44,19 +45,26 @@ def search(dictionary, start, visited, schedule):
                 if (isOwnClass(courseInfo.prereqs)):
                     prereqs = findFirst(visited, courseInfo.prereqs)
                     if len(prereqs) is 0:
-                        print (course, ' scheduled')
+                        reqDictionary[course] = prereqs
                         visited.append(course)
+                        scheduler(semesters, semDict, dictionary, course, courseInfo, toAdd)
                     else:
                         for prereq in prereqs:
                             if prereq not in visited:
                                 visited.append(course)
+                                toAdd = findPreReq(visited, courseInfo.prereqs)
+                                scheduler(semesters, semDict, dictionary, course, courseInfo, toAdd)
+                                reqDictionary[course] = prereq
                                 endGoal.append(prereq)
                 else:
                     #if courseInfo.prereqs == 1
                     #if all are equal to one then the higher level essentially just a course
                     if preReqsComp(visited, courseInfo.prereqs):
-                        print (course, ' scheduled')
+                        #print (course, ' ', courseInfo)
+                        toAdd = findPreReq(visited, courseInfo.prereqs)
                         visited.append(course)
+                        scheduler(semesters, semDict, dictionary, course, courseInfo, toAdd)
+                        reqDictionary[course] = courseInfo.prereqs
                     else:
                         #add course to the stack of courses that need there prereqs completed
                         endGoal.append(course)
@@ -67,24 +75,22 @@ def search(dictionary, start, visited, schedule):
                         for prereq in prereqs:
                             if prereq not in schedule:
                                 endGoal.append(prereq)
-
             else:
                 #checks if the course is one with no prereqs
                 if len(courseInfo.prereqs) is 0:
-                    #print("Low")
-                    print(course, ' scheduled')
                     visited.append(course)
+                    scheduler(semesters, semDict, dictionary, course, courseInfo,[])
+                    reqDictionary[course] = []
                     #course has credits but no prereqs do SOMETHING
                 else:
                     if preReqsComp(visited, courseInfo.prereqs):
-                        #newl
-                        print(course, ' scheduled')
+                        toAdd = findPreReq(visited, courseInfo.prereqs)
                         visited.append(course)
+                        scheduler(semesters, semDict, dictionary, course, courseInfo, toAdd)
+                        reqDictionary[course] = courseInfo.prereqs
                         #course has credits & prereqs but theyve been completed
                     else:
-                        #add course to the stack of courses that need there prereqs completed
                         endGoal.append(course)
-                        #find the most satisfied prereq set
                         prereqs = mostSatisfied(visited, courseInfo.prereqs)
                         #in the most satisfied set for each prereq not already
                         #in scheduled append to the to be scheduled stack
@@ -92,6 +98,8 @@ def search(dictionary, start, visited, schedule):
                             if prereq not in schedule:
                                 endGoal.append(prereq)
 
+    for each in semDict:
+        print (each, semDict[each])
 
 #Tests to see if the length of all prereqs are length 1 (and) and is a edge case class
 def isOwnClass(prereqs):
@@ -99,13 +107,47 @@ def isOwnClass(prereqs):
         return True
     return False
 
-#incompleted
-def scheduler(dictionary, init, goals):
-    courses = [goals]
-    semesters = [('Frosh', 'Fall'), ('Frosh', 'Spring'), ('Soph', 'Fall'),
-                ('Soph', 'Spring'),('Junior', 'Fall'), ('Junior', 'Spring'),
-                ('Senior', 'Fall'), ('Senior', 'Spring')]
-    semDict = {semester:[0, []] for semester in semesters}
+def scheduler(semesters, semDict, test, course, courseInfo, prereqs):
+    firstAvail = lastPreSem(semesters, prereqs, semDict)
+    for sem in range((firstAvail + 1), 8):
+        if hoursCheck(semesters[sem], courseInfo, semDict):
+            if termOffer(semesters[sem], courseInfo, semDict):
+                semDict[semesters[sem]][0] += int (courseInfo.credits)
+                semDict[semesters[sem]][1].append(course)
+                return
+
+"""
+These are the scheduler helper functions
+"""
+
+def hoursCheck(semester, courseInfo, semDict):
+    if semDict[semester][0] + int (courseInfo.credits) <= 18:
+        return True
+    return False
+
+def semesterPrecheck(semester, prereqs):
+    for prereqs in prereqs:
+        if prereqs in semDict[semester][1]:
+            return False
+    return True
+
+def termOffer(semesters, courseInfo, semDict):
+    if semesters[1] in courseInfo.terms:
+        return True
+    return False
+
+def lastPreSem(semesters, prereqs, semDict):
+    maxSem = -1
+    for x in range (8):
+        for prereq in prereqs:
+            if prereq in semDict[semesters[x]][1]:
+                maxSem = x
+    return maxSem
+
+#find the first available semester
+"""
+These are the search algorithm helper functions
+"""
 
 #if all of the conjunction terms have been visited than return that specific
 #set of ands (in the form of 1 or) else return an empty list
@@ -150,7 +192,6 @@ def mostSatisfied(completed, prereqs):
             maxSat = cur
             goal = ors
     return goal
-
 
 if __name__ == "__main__":
     main(sys.argv)
