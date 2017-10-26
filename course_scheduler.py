@@ -7,19 +7,23 @@ def main(argv):
     #Creates a dictionary to use for testing
     test = course_dictionary.create_course_dict()
     #Creates an object course
+
     Course = namedtuple('Course', 'program, designation')
     #initializes a course(state) to be the end goal of the schedule
-    goals = Course('CS', 'major')
+    #'CS', 'major'
+    goals = [Course('CS', 'major'), Course('JAPN', '3891')]
     semesters = [('Frosh', 'Fall'), ('Frosh', 'Spring'), ('Soph', 'Fall'),
                 ('Soph', 'Spring'),('Junior', 'Fall'), ('Junior', 'Spring'),
                 ('Senior', 'Fall'), ('Senior', 'Spring')]
     semDict = {semester:[0, []] for semester in semesters}
     #print(test[Course('CS', 'major')])
     #initializes the initial state to no courses
-    init_state = []
+    #use form [('MATH', '2810'),xxx
+    init_state = [('CS', '1101'), ('JAPN', '1101')]
     schedule = []
     #course_dictionary.print_dict(test)
     #test_most_satisfied_mans(test)
+
     search(semesters, semDict, test, goals, init_state, schedule)
     print('Done')
 
@@ -32,7 +36,7 @@ def test_most_satisfied_mans(dictionary):
     print(mostSatisfied(courseInfo.prereqs, completed))
 
 def search(semesters, semDict, dictionary, start, visited, schedule):
-    endGoal = [start]
+    endGoal = start
     reqDictionary = {}
     while endGoal:
         course = endGoal.pop()
@@ -47,7 +51,7 @@ def search(semesters, semDict, dictionary, start, visited, schedule):
                     if len(prereqs) is 0:
                         reqDictionary[course] = prereqs
                         visited.append(course)
-                        scheduler(semesters, semDict, dictionary, course, courseInfo, toAdd)
+                        scheduler(semesters, semDict, dictionary, course, courseInfo, [])
                     else:
                         for prereq in prereqs:
                             if prereq not in visited:
@@ -97,7 +101,6 @@ def search(semesters, semDict, dictionary, start, visited, schedule):
                         for prereq in prereqs:
                             if prereq not in schedule:
                                 endGoal.append(prereq)
-
     for each in semDict:
         print (each, semDict[each])
 
