@@ -11,7 +11,9 @@ def main(argv):
     Course = namedtuple('Course', 'program, designation')
     #initializes a course(state) to be the end goal of the schedule
     #'CS', 'major'
-    goals = [Course('CS', 'major')]
+    goals = [Course('CS', 'major'), Course('ANTH', '4345'),
+    Course('ARTS', '3600'), Course('ASTR', '3600'), Course('BME', '4500'),
+    Course('BUS', '2300'), Course('CE', '3705'), Course('LAT', '3140'), Course('JAPN', '3891') ]
     semesters = [('Frosh', 'Fall'), ('Frosh', 'Spring'), ('Soph', 'Fall'),
                 ('Soph', 'Spring'),('Junior', 'Fall'), ('Junior', 'Spring'),
                 ('Senior', 'Fall'), ('Senior', 'Spring')]
@@ -20,13 +22,26 @@ def main(argv):
     #initializes the initial state to no courses
     #use form [('MATH', '2810'),xxx
     init_state = [('CS', '1101')]
-    schedule = []
     #course_dictionary.print_dict(test)
 
-    search(semesters, semDict, test, goals, init_state, schedule)
+    search(semesters, semDict, test, goals, init_state)
+
+    check = -1
+    for goal in goals:
+        for semester in semDict:
+            if goal in semDict[semester][1]:
+                check = 1
+    if check is -1:
+        semDict = {}
+
+    for each in semDict:
+        print (each, semDict[each])
+    finalSchedule = {}
+
+
     print('Done')
 
-def search(semesters, semDict, dictionary, start, visited, schedule):
+def search(semesters, semDict, dictionary, start, visited):
     endGoal = start
     while endGoal:
         course = endGoal.pop()
@@ -42,6 +57,7 @@ def search(semesters, semDict, dictionary, start, visited, schedule):
                     if len(prereqs) is 0:
                         visited.append(course)
                         #scheduler(semesters, semDict, dictionary, course, courseInfo, [])
+                        semDict[semesters[7]][1].append(course)
                     #Case 2 higher level prereqs are not all met
                     else:
                         #this will result in result errors in certain cases
@@ -51,12 +67,14 @@ def search(semesters, semDict, dictionary, start, visited, schedule):
                                 visited.append(course)
                                 prereqA = findPreReq(visited, courseInfo.prereqs)
                                 #scheduler(semesters, semDict, dictionary, course, courseInfo, prereqA)
+                                semDict[semesters[7]][1].append(course)
                                 endGoal.append(prereq)
                 else:
                     #Case 3 Higher level prereqs are completed
                     if preReqsComp(visited, courseInfo.prereqs):
                         prereqsscheduled = findPreReq(visited, courseInfo.prereqs)
                         visited.append(course)
+                        semDict[semesters[7]][1].append(course)
                         #scheduler(semesters, semDict, dictionary, course, courseInfo, prereqsscheduled)
                     #Case 4 Higher level prereqs are not completed
                     else:
@@ -85,8 +103,8 @@ def search(semesters, semDict, dictionary, start, visited, schedule):
 
     ifEmpty(semesters, semDict, dictionary, visited)
 
-    for each in semDict:
-        print (each, semDict[each])
+    #for each in semDict:
+    #    print (each, semDict[each])
 
 #Tests to see if the length of all prereqs are length 1 (and) and is a edge case class
 def isOwnClass(prereqs):
