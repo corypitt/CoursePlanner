@@ -11,96 +11,80 @@ def main(argv):
     Course = namedtuple('Course', 'program, designation')
     #initializes a course(state) to be the end goal of the schedule
     #'CS', 'major'
-    goals = [Course('CS', 'major'), Course('JAPN', '3891')]
+    goals = [Course('CS', 'major')]
     semesters = [('Frosh', 'Fall'), ('Frosh', 'Spring'), ('Soph', 'Fall'),
                 ('Soph', 'Spring'),('Junior', 'Fall'), ('Junior', 'Spring'),
                 ('Senior', 'Fall'), ('Senior', 'Spring')]
     semDict = {semester:[0, []] for semester in semesters}
-    #print(test[Course('CS', 'major')])
+    print(test[Course('CS', 'major')])
     #initializes the initial state to no courses
     #use form [('MATH', '2810'),xxx
-    init_state = [('CS', '1101'), ('JAPN', '1101')]
+    init_state = [('CS', '1101')]
     schedule = []
     #course_dictionary.print_dict(test)
-    #test_most_satisfied_mans(test)
 
     search(semesters, semDict, test, goals, init_state, schedule)
     print('Done')
 
-def test_most_satisfied_mans(dictionary):
-    Course = namedtuple('Course', 'program, designation')
-    CourseInfo = namedtuple('CourseInfo', 'credits, terms, prereqs')
-    courseInfo = dictionary[Course('CS', '3259')]
-    completed = [Course('MATH', '2400')]
-    print(courseInfo.prereqs)
-    print(mostSatisfied(courseInfo.prereqs, completed))
-
 def search(semesters, semDict, dictionary, start, visited, schedule):
     endGoal = start
-    reqDictionary = {}
     while endGoal:
         course = endGoal.pop()
         if course not in visited:
             courseInfo = dictionary[course]
-            #Checks if the course is a higher level
             if courseInfo.credits is '0':
-                #runHighLevel
-                #if credits = 0 and the largest prereq set = 1
+                """
+                Higher level
+                """
                 if (isOwnClass(courseInfo.prereqs)):
                     prereqs = findFirst(visited, courseInfo.prereqs)
+                    #Case 1 higher level Prereqs are all met
                     if len(prereqs) is 0:
-                        reqDictionary[course] = prereqs
                         visited.append(course)
-                        scheduler(semesters, semDict, dictionary, course, courseInfo, [])
+                        #scheduler(semesters, semDict, dictionary, course, courseInfo, [])
+                    #Case 2 higher level prereqs are not all met
                     else:
+                        #this will result in result errors in certain cases
+                        #come back to
                         for prereq in prereqs:
                             if prereq not in visited:
                                 visited.append(course)
-                                toAdd = findPreReq(visited, courseInfo.prereqs)
-                                scheduler(semesters, semDict, dictionary, course, courseInfo, toAdd)
-                                reqDictionary[course] = prereq
+                                prereqA = findPreReq(visited, courseInfo.prereqs)
+                                #scheduler(semesters, semDict, dictionary, course, courseInfo, prereqA)
                                 endGoal.append(prereq)
                 else:
-                    #if courseInfo.prereqs == 1
-                    #if all are equal to one then the higher level essentially just a course
+                    #Case 3 Higher level prereqs are completed
                     if preReqsComp(visited, courseInfo.prereqs):
-                        #print (course, ' ', courseInfo)
-                        toAdd = findPreReq(visited, courseInfo.prereqs)
+                        prereqsscheduled = findPreReq(visited, courseInfo.prereqs)
                         visited.append(course)
-                        scheduler(semesters, semDict, dictionary, course, courseInfo, toAdd)
-                        reqDictionary[course] = courseInfo.prereqs
+                        #scheduler(semesters, semDict, dictionary, course, courseInfo, prereqsscheduled)
+                    #Case 4 Higher level prereqs are not completed
                     else:
-                        #add course to the stack of courses that need there prereqs completed
                         endGoal.append(course)
-                        #find the most satisfied prereq set
                         prereqs = mostSatisfied(visited,courseInfo.prereqs)
-                        #in the most satisfied set for each prereq not already
-                        #in scheduled append to the to be scheduled stack
                         for prereq in prereqs:
-                            if prereq not in schedule:
+                            if prereq not in visited:
                                 endGoal.append(prereq)
             else:
-                #checks if the course is one with no prereqs
+                #Low level case 5 Course with no prereqs unmet
                 if len(courseInfo.prereqs) is 0:
                     visited.append(course)
                     scheduler(semesters, semDict, dictionary, course, courseInfo,[])
-                    reqDictionary[course] = []
-                    #course has credits but no prereqs do SOMETHING
                 else:
                     if preReqsComp(visited, courseInfo.prereqs):
                         toAdd = findPreReq(visited, courseInfo.prereqs)
                         visited.append(course)
                         scheduler(semesters, semDict, dictionary, course, courseInfo, toAdd)
-                        reqDictionary[course] = courseInfo.prereqs
-                        #course has credits & prereqs but theyve been completed
+                    #Course with unmet prereqs add the course back to the todo stack
                     else:
                         endGoal.append(course)
                         prereqs = mostSatisfied(visited, courseInfo.prereqs)
-                        #in the most satisfied set for each prereq not already
-                        #in scheduled append to the to be scheduled stack
                         for prereq in prereqs:
-                            if prereq not in schedule:
+                            if prereq not in visited:
                                 endGoal.append(prereq)
+
+    ifEmpty(semesters, semDict, dictionary, visited)
+
     for each in semDict:
         print (each, semDict[each])
 
@@ -109,6 +93,26 @@ def isOwnClass(prereqs):
     if all(len(ors) is 1 for ors in prereqs):
         return True
     return False
+
+def ifEmpty(semesters, semDict, test, visited):
+    for sem in semesters:
+        while semDict[sem][0] < 12:
+            for course in test:
+                courseInfo = test[course]
+                addFormat = (course.program, course.designation)
+                if (course not in visited and
+                    termOffer(sem, courseInfo, semDict) and len(courseInfo.prereqs) is 0):
+                    visited.append(course)
+                    semDict[sem][0] += int (courseInfo.credits)
+                    semDict[sem][1].append(addFormat)
+                    break
+
+#for every semester in semester dictionary
+#while semdict[semester][0] < 12
+#find the next course in the big dictionary that the course is not already completed
+#the semester is in the courseInfo terms and the length of the course prereqs is 0
+#append the course and add the credits
+
 
 def scheduler(semesters, semDict, test, course, courseInfo, prereqs):
     firstAvail = lastPreSem(semesters, prereqs, semDict)
